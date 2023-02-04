@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Admin</title>
+    <style>
+      body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      #order_section {  display: grid; justify-items: center; align-items: center; margin-top: 100px; cursor: pointer; }
+      #order_button { align-self: center; width: 50%; height: 100px; font-size: large; }
+      #order_message { align-self: center; width: 50%; height: 100px; font-size: large; margin: 50px; }
+
+    #orders {
+        font-family: Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    #orders td, #orders th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    #orders tr:nth-child(even){background-color: #f2f2f2;}
+
+    #orders tr:hover {background-color: #ddd;}
+
+    #orders th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #04AA6D;
+    color: white;
+    }
+
+    </style>
+
+  </head>
+  <body>
+    <div id="order_section">
+        <h3>Orders</h3>
+        <table id="orders">
+            <tr>
+              <th>Order id</th>
+              <th>item</th>
+              <th>status</th>
+              <th>Action</th>
+            </tr>
+          </table>
+    </div>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+      const socket = io('ws://localhost:3000', {
+        auth: {
+            user_type: 'admin'
+        }
+      });
+
+      socket.on('connected', function(msg) {
+        console.log('Admin connected')
+      });
+
+      const orders = []
+
+  
+    //   for(const order of orders) {
+       
+
+    //   }
+
+
+      socket.on('processing_order_admin', function(data) {
+        console.log('server_says', data)
+        const { order } = data;
+        const orderTable = document.getElementById('orders');
+        const row = orderTable.insertRow(-1);
+
+        let column1 = row.insertCell(0);
+        let column2 = row.insertCell(1);
+        let column3 = row.insertCell(2);
+        let column4 = row.insertCell(3);
+
+        column1.innerText = order.id;
+        column2.innerText = order.item;
+        column3.innerText = order.status;
+
+        const acceptId = `accept_order_${order.id}`
+        const rejectId = `reject_order_${order.id}`
+
+        if (order.status === 'pending') {
+            column4.innerHTML = `
+              <div>
+                <button id="${acceptId}">Accept</button>
+                <button id="${rejectId}">Reject</button>
+              </div>
+              `
+        }
+
+        const acceptButton = document.getElementById(acceptId)
+        const rejectButton = document.getElementById(rejectId)
+
+        acceptButton.addEventListener('click', () => {
+            console.log('admin accepted')
+            socket.emit('admin_action', { action: 'accept', order})
+            column3.innerText = 'accepted';
+            column4.innerHTML = `
+              <div>
+                <button disabled id="${acceptId}">Accepted</button>
+                <button disabled id="${rejectId}">Reject</button>
+              </div>
+              `
+        })
+
+        rejectButton.addEventListener('click', () => {
+            console.log('admin rejected')
+            socket.emit('admin_action', { action: 'reject', order})
+            column3.innerText = 'rejected'
+            column4.innerHTML = `
+              <div>
+                <button disabled id="${acceptId}">Accept</button>
+                <button disabled id="${rejectId}">Rejected</button>
+              </div>
+              `
+        })
+      });
+
+      socket.on('order_accepted', function(data) {
+        console.log('server_says', data)
+        const { message } = data;
+        const orderMessage = document.getElementById('order_message');
+        orderMessage.textContent = `${message}`;
+      });
+
+      socket.on('order_rejected', function(data) {
+        console.log('server_says', data)
+        const { message } = data;
+        const orderMessage = document.getElementById('order_message');
+        orderMessage.textContent = `${message}`;
+      });
+
+
+      
+    </script>
+  </body>
+</html>

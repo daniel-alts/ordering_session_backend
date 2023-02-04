@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Customer</title>
+    <style>
+      body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      #order_section {  display: grid; justify-items: center; align-items: center; margin-top: 100px; cursor: pointer; }
+      #order_button { align-self: center; width: 50%; height: 100px; font-size: large; }
+      #order_message { align-self: center; width: 50%; height: 100px; font-size: large; margin: 50px; }
+
+    </style>
+
+  </head>
+  <body>
+    <div id="order_section">
+        <button id="order_button">Order</button>
+        <div id="order_message"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+      const socket = io('ws://localhost:3000');
+
+      socket.on('connected', function(msg) {
+        console.log('Customer connected')
+      });
+
+    const orderButton = document.getElementById('order_button');
+
+    orderButton.addEventListener('click', function(e) {
+        socket.emit('order_requested', { 
+          id: Math.round(Math.random() * 10000), 
+          item: 'Pizza'
+        })
+      });
+
+      const appendEvent = (message) => {
+        const orderMessageElement = document.getElementById('order_message');
+        const p = document.createElement('p');
+        p.textContent = `${message}`
+        orderMessageElement.append(p)
+      }
+
+      socket.on('processing_order', function(data) {
+        console.log('server_says', data)
+        const { message } = data;
+        appendEvent(message);
+      });
+
+      socket.on('order_accepted', function(data) {
+        console.log('server_says', data)
+        const { message } = data;
+        appendEvent(message);
+      });
+
+      socket.on('order_rejected', function(data) {
+        console.log('server_says', data)
+        const { message } = data;
+        appendEvent(message);
+      });
+
+
+      
+    </script>
+  </body>
+</html>
